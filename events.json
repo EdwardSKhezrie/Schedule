@@ -1,0 +1,52 @@
+{
+  "2026-11-16": {
+    "date": "2026-11-16",
+    "items": [
+      {
+        "time": "3:30 PM",
+        "title": "Abie Shammah — Linmar Capital",
+        "note": "Meeting in the city."
+      }
+    ]
+  },
+  "2026-11-19": {
+    "date": "2026-11-19",
+    "items": [
+      {
+        "time": "9:00 PM",
+        "title": "Ralph — wedding",
+        "note": "No invitation yet. Need the time and the hall."
+      }
+    ]
+  },
+  "2026-11-22": {
+    "date": "2026-11-22",
+    "items": [
+      {
+        "time": "9:00 PM",
+        "title": "Rena & Moussy — wedding",
+        "note": "Called for 4:30 PM. Congregation Shaare Zion, 2030 Ocean Parkway, Brooklyn. Hanono / Srougo."
+      }
+    ]
+  },
+  "2026-11-29": {
+    "date": "2026-11-29",
+    "items": [
+      {
+        "time": "9:00 PM",
+        "title": "Marlene & Eddie — wedding",
+        "note": "Called for 4:30 PM. Congregation Shaare Zion, Brooklyn. Wahba / Shamosh."
+      }
+    ]
+  },
+  "2026-12-02": {
+    "date": "2026-12-02",
+    "items": [
+      {
+        "time": "9:00 PM",
+        "title": "Rosie & Bobby — wedding",
+        "note": "Called for 6:00 PM. Ateres Chaim Elazar, 800 Rockaway Ave, Lakewood NJ. Ashkenazi / Tawil."
+      }
+    ]
+  }
+}

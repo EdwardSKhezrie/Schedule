@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schedule">
+<meta name="theme-color" content="#E3E6E9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A1016" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Schedule</title>
+<style>
+html,body{margin:0;padding:0}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Logbook, not dashboard: hairline rules, squared geometry, tabular data type, one brass accent. */
+:root{
+  --bg:#E3E6E9;
+  --surface:#FFFFFF;
+  --surface-2:#ECEFF2;
+  --ink:#10161C;
+  --muted:#58646F;
+  --faint:#8A939C;
+  --line:#C8D0D7;
+  --hair:#DBE1E6;
+  --accent:#17425F;
+  --brass:#8A6A17;
+  --done:#14664A;
+  --done-bg:#D9EBE3;
+  --miss:#95372A;
+  --miss-bg:#F2DFDB;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --ui:"Inter Tight","Inter",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1016;--surface:#111A22;--surface-2:#16212B;--ink:#E8EDF2;--muted:#8794A1;
+    --faint:#66727E;--line:#223039;--hair:#1B2730;--accent:#79B2D4;--brass:#CFA43C;
+    --done:#3DA77D;--done-bg:#10302595;--miss:#D86B53;--miss-bg:#331C1695;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A1016;--surface:#111A22;--surface-2:#16212B;--ink:#E8EDF2;--muted:#8794A1;
+  --faint:#66727E;--line:#223039;--hair:#1B2730;--accent:#79B2D4;--brass:#CFA43C;
+  --done:#3DA77D;--done-bg:#10302595;--miss:#D86B53;--miss-bg:#331C1695;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:600px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 60px}
+
+/* masthead */
+.mast{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-block:16px 12px;border-bottom:1px solid var(--line)}
+.mast h1{font-family:var(--serif);font-size:27px;font-weight:400;letter-spacing:.01em;margin:0;line-height:1}
+.mast .stamp{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);
+  border:1px solid var(--brass);border-radius:2px;padding:3px 6px;white-space:nowrap}
+
+/* tabs: underline, not pills */
+.tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs button{appearance:none;background:none;border:0;padding:11px 0;cursor:pointer;
+  font-family:var(--ui);font-size:12px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* date head */
+.head{display:flex;align-items:flex-end;gap:14px;margin-bottom:16px}
+.head .num{font-family:var(--serif);font-size:58px;line-height:.82;letter-spacing:-.02em}
+.head .who{flex:1;min-width:0}
+.head .who .dow{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.head .who .mon{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.arrows{display:flex;gap:6px}
+.arrows button{width:34px;height:34px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:3px;font-size:15px;line-height:1;cursor:pointer}
+.arrows button[disabled]{opacity:.3;cursor:default}
+
+/* score bar */
+.score{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.score .bar{flex:1;height:3px;background:var(--hair);position:relative;overflow:hidden}
+.score .bar i{position:absolute;inset:0 auto 0 0;background:var(--brass);width:0;transition:width .22s ease}
+.score .n{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* section label */
+.lab{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+  display:flex;align-items:center;gap:9px;margin:22px 0 9px}
+.lab::after{content:"";flex:1;height:1px;background:var(--hair)}
+.lab:first-child{margin-top:0}
+
+/* checklist */
+.list{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:transparent;
+  border:0;border-bottom:1px solid var(--hair);padding:13px 2px;cursor:pointer;
+  font-family:var(--ui);color:var(--ink);-webkit-tap-highlight-color:transparent}
+.row .box{width:24px;height:24px;flex:none;border:1.5px solid var(--line);border-radius:3px;
+  background:var(--surface);display:grid;place-items:center;font-size:13px;font-weight:700;line-height:1;color:transparent}
+.row .meta{flex:1;min-width:0;display:block}
+.row .name{display:block;font-size:15px;font-weight:500;letter-spacing:-.005em}
+.row .time{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;color:var(--faint);
+  margin-top:3px;font-variant-numeric:tabular-nums;text-transform:uppercase}
+.row[data-state="done"] .box{background:var(--done);border-color:var(--done);color:#fff}
+.row[data-state="done"] .name{color:var(--muted)}
+.row[data-state="missed"] .box{background:var(--miss);border-color:var(--miss);color:#fff}
+.row[data-state="missed"] .name{color:var(--miss)}
+.row[data-state="missed"] .time{color:var(--miss)}
+
+/* tehillim */
+.teh{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:13px 14px}
+.teh .hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}
+.teh .rng{font-family:var(--serif);font-size:21px;line-height:1}
+.teh .cyc{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.chips button{appearance:none;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+  border-radius:3px;padding:11px 2px;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:500;
+  font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+.chips button[data-on="1"]{background:var(--done);border-color:var(--done);color:#fff}
+
+/* occasion + parasha cards */
+.card{border:1px solid var(--line);border-radius:4px;background:var(--surface);overflow:hidden}
+.card .bd{padding:12px 14px}
+.card+.card{margin-top:8px}
+.occ{display:flex;gap:12px;align-items:baseline;padding:11px 14px;border-bottom:1px solid var(--hair)}
+.occ:last-child{border-bottom:0}
+.occ .t{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--brass);flex:none;
+  min-width:64px;font-variant-numeric:tabular-nums}
+.occ .b{min-width:0;flex:1}
+.occ .b strong{display:block;font-size:14.5px;font-weight:600;letter-spacing:-.005em}
+.occ .b span{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}
+.par .nm{font-family:var(--serif);font-size:26px;line-height:1.05}
+.par .tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin-top:5px}
+.par a{color:var(--accent);font-size:12.5px;text-decoration:none;border-bottom:1px solid currentColor;display:inline-block;margin-top:9px}
+
+/* week matrix */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:20px}
+.tile{background:var(--surface);padding:12px 13px}
+.tile .v{font-family:var(--serif);font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.tile .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+.mx{border:1px solid var(--line);border-radius:4px;background:var(--surface);overflow:hidden}
+.mx .r{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 13px;border-bottom:1px solid var(--hair)}
+.mx .r:last-child{border-bottom:0}
+.mx .r.h{background:var(--surface-2)}
+.mx .nm{min-width:0}
+.mx .nm b{font-size:13.5px;font-weight:600;display:block;letter-spacing:-.005em}
+.mx .nm small{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--faint);
+  font-variant-numeric:tabular-nums;display:block;margin-top:2px}
+.mx .r.h .nm b{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:500}
+.cells{display:flex;gap:3px;flex:none}
+.cells span{width:19px;height:19px;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);
+  display:grid;place-items:center;font-family:var(--mono);font-size:9px;font-weight:700;color:var(--faint)}
+.cells span[data-s="done"]{background:var(--done);border-color:var(--done);color:#fff}
+.cells span[data-s="missed"]{background:var(--miss);border-color:var(--miss);color:#fff}
+.cells span[data-s="na"]{background:transparent;border-color:transparent}
+.cells span[data-s="future"]{opacity:.32}
+.mx .r.h .cells span{background:transparent;border-color:transparent;color:var(--faint);letter-spacing:0}
+
+/* month calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.cal .dh{background:var(--surface-2);padding:7px 0;text-align:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint)}
+.cal .cell{background:var(--surface);aspect-ratio:1;border:0;padding:5px 4px 4px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;
+  font-family:var(--mono);font-size:12px;color:var(--ink);position:relative;
+  -webkit-tap-highlight-color:transparent}
+.cal .cell.pad{background:var(--surface-2);cursor:default;color:transparent}
+.cal .cell.sat{background:var(--surface-2)}
+.cal .cell.now .n{background:var(--ink);color:var(--bg);border-radius:50%}
+.cal .cell .n{width:21px;height:21px;display:grid;place-items:center;font-variant-numeric:tabular-nums;line-height:1}
+.cal .cell .ev{width:4px;height:4px;border-radius:50%;background:var(--brass)}
+.cal .cell .pg{position:absolute;left:5px;right:5px;bottom:5px;height:3px;background:var(--hair);overflow:hidden}
+.cal .cell .pg i{display:block;height:100%;background:var(--done)}
+.cal .cell[data-fut="1"] .n{color:var(--faint)}
+#mAgenda,#wAgenda{margin-top:18px}
+.agenda{margin-top:0}
+.agenda .row2{display:grid;grid-template-columns:58px 1fr;gap:11px;padding:10px 2px;border-bottom:1px solid var(--hair);align-items:baseline}
+.agenda .row2 .dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--brass)}
+.agenda .row2 b{font-size:14px;font-weight:600;display:block}
+.agenda .row2 span{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+.occ .x{appearance:none;border:0;background:none;color:var(--faint);font-size:19px;
+  line-height:1;cursor:pointer;padding:0 2px;flex:none;align-self:center}
+.empty2{font-size:13px;color:var(--faint)}
+.addbtn{margin-top:8px;width:100%;appearance:none;background:var(--surface-2);border:1px dashed var(--line);
+  border-radius:4px;color:var(--muted);padding:11px;font-family:var(--ui);font-size:13px;font-weight:600;cursor:pointer}
+.addform{margin-top:8px;display:flex;flex-direction:column;gap:7px;border:1px solid var(--line);
+  border-radius:4px;background:var(--surface);padding:12px}
+.addform input{font-family:var(--ui);font-size:15px;padding:9px 10px;border:1px solid var(--line);
+  border-radius:3px;background:var(--surface-2);color:var(--ink)}
+.addform .fb{display:flex;gap:7px}
+.addform .fb button{flex:1;appearance:none;border:1px solid var(--line);border-radius:3px;padding:9px;
+  font-family:var(--ui);font-size:13px;font-weight:600;cursor:pointer;background:var(--surface-2);color:var(--ink)}
+.addform .fb button[type="submit"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.note{margin-top:14px;font-size:13px;color:var(--muted);line-height:1.5}
+.note b{color:var(--ink);font-weight:600}
+.hint{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-top:16px}
+.warn{border:1px solid var(--miss);background:var(--miss-bg);border-radius:3px;padding:10px 12px;
+  font-size:13px;margin-bottom:14px;color:var(--ink)}
+.empty{font-size:13px;color:var(--faint);padding:14px 2px}
+@media (min-width:500px){ .tiles{grid-template-columns:repeat(4,1fr)} }
+</style>
+
+<div class="wrap">
+  <div class="mast">
+    <h1>Schedule</h1>
+    <div class="stamp" id="stamp">Sun–Fri</div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-day" aria-selected="true">Day</button>
+    <button role="tab" id="tab-week" aria-selected="false">Week</button>
+    <button role="tab" id="tab-month" aria-selected="false">Month</button>
+  </div>
+
+  <div id="banner" hidden></div>
+
+  <section id="view-day">
+    <div class="head">
+      <div class="num" id="dNum">—</div>
+      <div class="who"><div class="dow" id="dDow"></div><div class="mon" id="dMon"></div></div>
+      <div class="arrows"><button id="prev" aria-label="Previous day">‹</button><button id="next" aria-label="Next day">›</button></div>
+    </div>
+    <div class="score"><div class="bar"><i id="fill"></i></div><div class="n" id="scoreN"></div></div>
+    <div id="dayBody"></div>
+    <p class="hint" id="hint">Tap once done · twice missed · third clears</p>
+  </section>
+
+  <section id="view-week" hidden>
+    <div class="head">
+      <div class="who"><div class="dow" id="wLabel"></div><div class="mon" id="wSub"></div></div>
+      <div class="arrows"><button id="wprev" aria-label="Previous week">‹</button><button id="wnext" aria-label="Next week">›</button></div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="mx" id="matrix"></div>
+    <p class="note" id="wNote"></p>
+    <div id="wAgenda"></div>
+  </section>
+
+  <section id="view-month" hidden>
+    <div class="head">
+      <div class="who"><div class="dow" id="mLabel"></div><div class="mon" id="mSub"></div></div>
+      <div class="arrows"><button id="mprev" aria-label="Previous month">‹</button><button id="mnext" aria-label="Next month">›</button></div>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div id="mAgenda"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var WEEKDAY = [
+    {id:"wake",     name:"Wake up",          time:"5:50 AM"},
+    {id:"shacharit",name:"Shacharit",        time:"6:00 – 6:35 AM"},
+    {id:"learnAM",  name:"Morning seder",    time:"6:45 – 7:10 AM"},
+    {id:"workout",  name:"Workout",          time:"7:20 – 7:50 AM"},
+    {id:"office",   name:"Leave for office", time:"8:15 AM"},
+    {id:"mincha",   name:"Mincha",           time:"2:00 PM"},
+    {id:"learnPM",  name:"Night seder",      time:"8:00 – 9:00 PM"},
+    {id:"arvit",    name:"Arvit",            time:"8:45 PM"}
+  ];
+  var SUNDAY = [
+    {id:"wake",     name:"Wake up",       time:"5:50 AM"},
+    {id:"shacharit",name:"Shacharit",     time:"6:00 – 6:35 AM"},
+    {id:"learnAM",  name:"Morning seder", time:"6:45 – 7:10 AM"},
+    {id:"workout",  name:"Workout",       time:"7:20 – 7:50 AM"},
+    {id:"mincha",   name:"Mincha",        time:"2:00 PM"},
+    {id:"arvit",    name:"Arvit",         time:"8:45 PM"}
+  ];
+  var SHABBAT = [
+    {id:"satWake",  name:"Wake up and daven", time:"6:30 AM"},
+    {id:"shnayim",  name:"Shnayim mikra",     time:"Parasha of the week"},
+    {id:"writeup",  name:"Write up the parasha", time:"Research · cite a source"}
+  ];
+
+  /* Shabbat Torah readings, 5787 Diaspora. d = double, t = special Shabbat or festival. */
+  var PARASHA = {
+    "2026-09-19":{n:"Ha'azinu",t:"Shabbat Shuva"},
+    "2026-09-26":{n:"Sukkot I",t:"Festival reading"},
+    "2026-10-03":{n:"Shmini Atzeret",t:"Festival reading"},
+    "2026-10-10":{n:"Bereshit",t:"Machar Chodesh"},
+    "2026-10-17":{n:"Noach"},
+    "2026-10-24":{n:"Lech-Lecha"},
+    "2026-10-31":{n:"Vayera"},
+    "2026-11-07":{n:"Chayei Sara"},
+    "2026-11-14":{n:"Toldot"},
+    "2026-11-21":{n:"Vayetzei"},
+    "2026-11-28":{n:"Vayishlach"},
+    "2026-12-05":{n:"Vayeshev",t:"Chanukah day 1"},
+    "2026-12-12":{n:"Miketz",t:"Chanukah day 8"},
+    "2026-12-19":{n:"Vayigash"},
+    "2026-12-26":{n:"Vayechi"},
+    "2027-01-02":{n:"Shemot"},
+    "2027-01-09":{n:"Vaera",t:"Rosh Chodesh Sh'vat"},
+    "2027-01-16":{n:"Bo"},
+    "2027-01-23":{n:"Beshalach",t:"Shabbat Shirah"},
+    "2027-01-30":{n:"Yitro"},
+    "2027-02-06":{n:"Mishpatim",t:"Machar Chodesh"},
+    "2027-02-13":{n:"Terumah"},
+    "2027-02-20":{n:"Tetzaveh"},
+    "2027-02-27":{n:"Ki Tisa"},
+    "2027-03-06":{n:"Vayakhel",t:"Shabbat Shekalim"},
+    "2027-03-13":{n:"Pekudei"},
+    "2027-03-20":{n:"Vayikra",t:"Shabbat Zachor"},
+    "2027-03-27":{n:"Tzav",t:"Shabbat Parah"},
+    "2027-04-03":{n:"Shmini",t:"Shabbat HaChodesh"},
+    "2027-04-10":{n:"Tazria"},
+    "2027-04-17":{n:"Metzora",t:"Shabbat HaGadol"},
+    "2027-04-24":{n:"Pesach III",t:"Chol HaMoed"},
+    "2027-05-01":{n:"Achrei Mot"},
+    "2027-05-08":{n:"Kedoshim",t:"Rosh Chodesh Iyyar"},
+    "2027-05-15":{n:"Emor"},
+    "2027-05-22":{n:"Behar"},
+    "2027-05-29":{n:"Bechukotai"},
+    "2027-06-05":{n:"Bamidbar",t:"Machar Chodesh"},
+    "2027-06-12":{n:"Shavuot II",t:"Festival reading"},
+    "2027-06-19":{n:"Nasso"},
+    "2027-06-26":{n:"Beha'alotcha"},
+    "2027-07-03":{n:"Sh'lach"},
+    "2027-07-10":{n:"Korach"},
+    "2027-07-17":{n:"Chukat-Balak",d:1},
+    "2027-07-24":{n:"Pinchas"},
+    "2027-07-31":{n:"Matot-Masei",d:1},
+    "2027-08-07":{n:"Devarim",t:"Shabbat Chazon"},
+    "2027-08-14":{n:"Vaetchanan",t:"Shabbat Nachamu"},
+    "2027-08-21":{n:"Eikev"},
+    "2027-08-28":{n:"Re'eh"},
+    "2027-09-04":{n:"Shoftim"},
+    "2027-09-11":{n:"Ki Teitzei"},
+    "2027-09-18":{n:"Ki Tavo"},
+    "2027-09-25":{n:"Nitzavim-Vayeilech",d:1}
+  };
+
+  var DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Shabbat"];
+  var DOW1 = ["S","M","T","W","T","F","S"];
+  var MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var CYCLE = ["done","missed",null];
+  var TEH_ANCHOR = Date.UTC(2026,9,22); // set so Sun 15 Nov 2026 lands on Tehillim 121–125
+
+  function key(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function addDays(d,n){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function weekStart(d){ return addDays(d,-d.getDay()); }
+  function short(d){ return MON[d.getMonth()].slice(0,3)+" "+d.getDate(); }
+  function itemsFor(d){ var w=d.getDay(); return w===6 ? SHABBAT : (w===0 ? SUNDAY : WEEKDAY); }
+  function applies(d,id){ return itemsFor(d).some(function(x){ return x.id===id; }); }
+
+  function tehillim(d){
+    var days = Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()) - TEH_ANCHOR)/864e5);
+    var i = ((days % 30) + 30) % 30;
+    return { start:i*5+1, block:i+1 };
+  }
+
+  var today=new Date(); today.setHours(0,0,0,0);
+  var cursor=new Date(today);
+  var wCursor=weekStart(today);
+  var mCursor=new Date(today.getFullYear(),today.getMonth(),1);
+  var view="day";
+
+  var marks={}, events={}, fileEvents={}, canWrite=true;
+
+  function mergeEvents(){
+    events={};
+    [fileEvents,localEvents].forEach(function(src){
+      Object.keys(src||{}).forEach(function(k){
+        var items=((src[k]||{}).items)||[];
+        if(!events[k]) events[k]={date:k,items:[]};
+        items.forEach(function(it){ events[k].items.push(it); });
+      });
+    });
+    Object.keys(events).forEach(function(k){
+      events[k].items.sort(function(a,b){ return String(a.time||"").localeCompare(String(b.time||"")); });
+    });
+  }
+
+  function addOccasion(k,time,title,note){
+    if(!localEvents[k]) localEvents[k]={date:k,items:[]};
+    localEvents[k].items.push({time:time,title:title,note:note,own:1});
+    lsSet(LS_EV,localEvents); mergeEvents(); render();
+  }
+  function removeOccasion(k,title,time){
+    var list=((localEvents[k]||{}).items)||[];
+    for(var i=0;i<list.length;i++){
+      if(list[i].title===title && list[i].time===time){ list.splice(i,1); break; }
+    }
+    if(!list.length) delete localEvents[k];
+    lsSet(LS_EV,localEvents); mergeEvents(); render();
+  }
+  var $=function(id){ return document.getElementById(id); };
+  function st(k,id){ var m=marks[k]; return (m&&m[id])||null; }
+
+  /* ---------------- day view ---------------- */
+
+  function renderDay(){
+    var k=key(cursor), sat=cursor.getDay()===6;
+    $("dNum").textContent=cursor.getDate();
+    $("dDow").textContent = k===key(today) ? "Today · "+DOW[cursor.getDay()] : DOW[cursor.getDay()];
+    $("dMon").textContent = MON[cursor.getMonth()]+" "+cursor.getFullYear();
+    var fut = k>key(today);
+    $("stamp").textContent = fut ? "Planned" : (sat ? "Shabbat" : (cursor.getDay()===0 ? "Sunday" : "Weekday"));
+
+    var body=$("dayBody"); body.textContent="";
+    var items=itemsFor(cursor);
+    var teh=tehillim(cursor);
+
+    /* occasions */
+    var evs=(events[k]&&events[k].items)||[];
+    body.appendChild(label("Occasions"));
+    var card=document.createElement("div"); card.className="card";
+    if(!evs.length){
+      var none=document.createElement("div"); none.className="bd empty2";
+      none.textContent="Nothing booked.";
+      card.appendChild(none);
+    }
+    evs.forEach(function(e){
+      var o=document.createElement("div"); o.className="occ";
+      var t=document.createElement("div"); t.className="t"; t.textContent=e.time||"—";
+      var b=document.createElement("div"); b.className="b";
+      var s=document.createElement("strong"); s.textContent=e.title||"Event";
+      b.appendChild(s);
+      if(e.note){ var nt=document.createElement("span"); nt.textContent=e.note; b.appendChild(nt); }
+      o.appendChild(t); o.appendChild(b);
+      if(e.own){
+        var x=document.createElement("button"); x.type="button"; x.className="x";
+        x.textContent="\u00d7"; x.setAttribute("aria-label","Remove "+(e.title||"event"));
+        x.addEventListener("click",function(){ removeOccasion(k,e.title,e.time); });
+        o.appendChild(x);
+      }
+      card.appendChild(o);
+    });
+    body.appendChild(card);
+
+    var addBtn=document.createElement("button");
+    addBtn.type="button"; addBtn.className="addbtn"; addBtn.textContent="+ Add occasion";
+    var form=document.createElement("form"); form.className="addform"; form.hidden=true;
+    form.innerHTML='<input id="ocT" placeholder="9:00 PM" autocomplete="off">'+
+      '<input id="ocN" placeholder="What is it" autocomplete="off">'+
+      '<input id="ocD" placeholder="Where / notes" autocomplete="off">'+
+      '<div class="fb"><button type="submit">Save</button><button type="button" id="ocX">Cancel</button></div>';
+    addBtn.addEventListener("click",function(){ form.hidden=false; addBtn.hidden=true; form.querySelector("#ocN").focus(); });
+    form.addEventListener("submit",function(ev){
+      ev.preventDefault();
+      var title=form.querySelector("#ocN").value.trim();
+      if(!title) return;
+      addOccasion(k, form.querySelector("#ocT").value.trim(), title, form.querySelector("#ocD").value.trim());
+    });
+    form.querySelector("#ocX").addEventListener("click",function(){ form.hidden=true; addBtn.hidden=false; });
+    body.appendChild(addBtn); body.appendChild(form);
+
+    /* parasha */
+    if(sat){
+      var p=PARASHA[k];
+      body.appendChild(label("Parasha"));
+      var pc=document.createElement("div"); pc.className="card par";
+      var bd=document.createElement("div"); bd.className="bd";
+      var nm=document.createElement("div"); nm.className="nm";
+      nm.textContent = p ? p.n : "Not in the loaded year";
+      bd.appendChild(nm);
+      if(p){
+        var tags=[];
+        if(p.d) tags.push("Double parasha");
+        if(p.t) tags.push(p.t);
+        if(tags.length){ var tg=document.createElement("div"); tg.className="tag"; tg.textContent=tags.join(" · "); bd.appendChild(tg); }
+        var a=document.createElement("a");
+        a.href="https://www.sefaria.org/texts/Tanakh/Torah"; a.target="_blank"; a.rel="noopener";
+        a.textContent="Open the text on Sefaria";
+        bd.appendChild(a);
+      }
+      pc.appendChild(bd); body.appendChild(pc);
+    }
+
+    /* checklist */
+    body.appendChild(label(sat ? "Shabbat" : (cursor.getDay()===0 ? "Sunday — no office, no night seder" : "The day")));
+    var list=document.createElement("div"); list.className="list";
+    var done=0;
+    items.forEach(function(it){
+      var s=st(k,it.id); if(s==="done") done++;
+      var row=document.createElement("button"); row.type="button"; row.className="row";
+      if(s) row.setAttribute("data-state",s);
+      row.setAttribute("aria-label", it.name+": "+(s||"unmarked"));
+      var box=document.createElement("span"); box.className="box";
+      box.textContent = s==="done" ? "✓" : (s==="missed" ? "✕" : "");
+      var meta=document.createElement("span"); meta.className="meta";
+      var nn=document.createElement("span"); nn.className="name"; nn.textContent=it.name;
+      var tt=document.createElement("span"); tt.className="time"; tt.textContent=it.time;
+      meta.appendChild(nn); meta.appendChild(tt);
+      row.appendChild(box); row.appendChild(meta);
+      if(fut){ row.disabled=true; row.style.cursor="default"; row.style.opacity=".72"; }
+      else row.addEventListener("click",function(){ cycle(k,it.id); });
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+
+    /* tehillim */
+    body.appendChild(label("Tehillim"));
+    var tw=document.createElement("div"); tw.className="teh";
+    var hd=document.createElement("div"); hd.className="hd";
+    var rng=document.createElement("div"); rng.className="rng";
+    rng.textContent="Perek "+teh.start+"–"+(teh.start+4);
+    var cyc=document.createElement("div"); cyc.className="cyc";
+    cyc.textContent="Day "+teh.block+" of 30";
+    hd.appendChild(rng); hd.appendChild(cyc); tw.appendChild(hd);
+    var chips=document.createElement("div"); chips.className="chips";
+    var tdone=0;
+    for(var i=0;i<5;i++){
+      (function(n){
+        var id="teh"+n;
+        var on=st(k,id)==="done"; if(on) tdone++;
+        var b=document.createElement("button"); b.type="button";
+        b.textContent=teh.start+n;
+        b.setAttribute("data-on",on?"1":"0");
+        b.setAttribute("aria-pressed",String(on));
+        if(fut){ b.disabled=true; b.style.cursor="default"; b.style.opacity=".6"; }
+        else b.addEventListener("click",function(){ toggle(k,id); });
+        chips.appendChild(b);
+      })(i);
+    }
+    tw.appendChild(chips); body.appendChild(tw);
+
+    var total=items.length+5, hit=done+tdone;
+    $("fill").style.width = fut ? "0%" : Math.round(hit/total*100)+"%";
+    $("scoreN").textContent = fut ? total+" planned" : hit+" / "+total;
+    $("hint").textContent = fut ? "Upcoming — mark it off on the day" : "Tap once done · twice missed · third clears";
+  }
+
+  function label(text){ var l=document.createElement("div"); l.className="lab"; l.textContent=text; return l; }
+
+  /* ---------------- week view ---------------- */
+
+  function renderWeek(){
+    var start=wCursor, end=addDays(start,6);
+    var cur=key(start)===key(weekStart(today));
+    $("wLabel").textContent=cur?"This week":"Week of "+short(start);
+    $("wSub").textContent=short(start)+" – "+short(end);
+    $("stamp").textContent = key(start)>key(weekStart(today)) ? "Ahead" : (cur ? "Sun–Sat" : "Past");
+
+    var days=[];
+    for(var i=0;i<7;i++){ var d=addDays(start,i); days.push({d:d,k:key(d),future:key(d)>key(today)}); }
+    var elapsed=days.filter(function(x){ return !x.future; }).length;
+
+    var rows=[];
+    WEEKDAY.forEach(function(it){ rows.push({item:it}); });
+    SHABBAT.forEach(function(it){ rows.push({item:it}); });
+    rows.push({item:{id:"__teh",name:"Tehillim (all 5)"},teh:true});
+
+    var totDone=0,totMiss=0,poss=0,clean=0;
+    days.forEach(function(x){
+      if(x.future) return;
+      var items=itemsFor(x.d), n=0, cap=items.length+5;
+      items.forEach(function(it){
+        var s=st(x.k,it.id);
+        if(s==="done"){ n++; totDone++; } else if(s==="missed") totMiss++;
+      });
+      for(var i=0;i<5;i++){ if(st(x.k,"teh"+i)==="done"){ n++; totDone++; } }
+      poss+=cap;
+      if(n===cap) clean++;
+    });
+    var pct=poss?Math.round(totDone/poss*100):0;
+
+    var tiles=[[pct+"%","Hit rate"],[totDone+"/"+poss,"Checked off"],[String(totMiss),"Missed"],[clean+"/"+elapsed,"Clean days"]];
+    var tw=$("tiles"); tw.textContent="";
+    tiles.forEach(function(t){
+      var el=document.createElement("div"); el.className="tile";
+      var v=document.createElement("div"); v.className="v"; v.textContent=t[0];
+      var l=document.createElement("div"); l.className="l"; l.textContent=t[1];
+      el.appendChild(v); el.appendChild(l); tw.appendChild(el);
+    });
+
+    var mx=$("matrix"); mx.textContent="";
+    var hr=document.createElement("div"); hr.className="r h";
+    var hn=document.createElement("div"); hn.className="nm";
+    var hb=document.createElement("b"); hb.textContent="Item"; hn.appendChild(hb);
+    var hc=document.createElement("div"); hc.className="cells";
+    DOW1.forEach(function(s){ var c=document.createElement("span"); c.textContent=s; hc.appendChild(c); });
+    hr.appendChild(hn); hr.appendChild(hc); mx.appendChild(hr);
+
+    rows.forEach(function(r){
+      var line=document.createElement("div"); line.className="r";
+      var nm=document.createElement("div"); nm.className="nm";
+      var b=document.createElement("b"); b.textContent=r.item.name; nm.appendChild(b);
+      var cells=document.createElement("div"); cells.className="cells";
+      var hits=0, applicable=0;
+      days.forEach(function(x){
+        var ok = r.teh ? true : applies(x.d, r.item.id);
+        var s;
+        if(!ok) s="na";
+        else if(x.future) s="future";
+        else if(r.teh){
+          var c=0; for(var i=0;i<5;i++){ if(st(x.k,"teh"+i)==="done") c++; }
+          s = c===5 ? "done" : (c>0 ? "missed" : "none");
+        } else s = st(x.k,r.item.id)||"none";
+        if(ok && !x.future) applicable++;
+        if(s==="done") hits++;
+        var cell=document.createElement("span");
+        cell.setAttribute("data-s",s);
+        cell.textContent = s==="done" ? "✓" : (s==="missed" ? "✕" : "");
+        cell.title=DOW[x.d.getDay()];
+        cells.appendChild(cell);
+      });
+      var sm=document.createElement("small");
+      sm.textContent = applicable ? hits+" of "+applicable : "not yet";
+      nm.appendChild(sm);
+      line.appendChild(nm); line.appendChild(cells); mx.appendChild(line);
+    });
+
+    var scored=rows.filter(function(r){ return !r.teh; }).map(function(r){
+      var n=0,a=0;
+      days.forEach(function(x){
+        if(applies(x.d, r.item.id) && !x.future){ a++; if(st(x.k,r.item.id)==="done") n++; }
+      });
+      return {name:r.item.name,n:n,a:a};
+    }).filter(function(r){ return r.a>0; });
+
+    var note=$("wNote"); note.textContent="";
+    if(!scored.length || (totDone===0&&totMiss===0)){
+      note.textContent = elapsed ? "Nothing marked yet this week." : "The week hasn't started.";
+    } else {
+      var best=scored.slice().sort(function(a,b){ return b.n/b.a-a.n/a.a; })[0];
+      var worst=scored.slice().sort(function(a,b){ return a.n/a.a-b.n/b.a; })[0];
+      note.innerHTML="Strongest <b></b> · weakest <b></b>.";
+      var bs=note.querySelectorAll("b");
+      bs[0].textContent=best.name+" "+best.n+"/"+best.a;
+      bs[1].textContent=worst.name+" "+worst.n+"/"+worst.a;
+    }
+
+    agenda(key(start),key(end),$("wAgenda"),"Occasions this week");
+  }
+
+  /* agenda list shared by Week and Month */
+  function agenda(from,to,host,heading){
+    host.textContent="";
+    var out=[];
+    Object.keys(events).sort().forEach(function(dk){
+      if(dk<from||dk>to) return;
+      ((events[dk]||{}).items||[]).forEach(function(e){ out.push({k:dk,e:e}); });
+    });
+    if(!out.length) return;
+    host.appendChild(label(heading));
+    var box=document.createElement("div"); box.className="agenda";
+    out.forEach(function(x){
+      var p=x.k.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]);
+      var r=document.createElement("div"); r.className="row2";
+      var dt=document.createElement("div"); dt.className="dt";
+      dt.textContent=DOW[d.getDay()].slice(0,3)+" "+d.getDate();
+      var bd=document.createElement("div");
+      var b=document.createElement("b"); b.textContent=x.e.title||"Event"; bd.appendChild(b);
+      var s=document.createElement("span");
+      s.textContent=[x.e.time,x.e.note].filter(Boolean).join(" · ");
+      bd.appendChild(s);
+      r.appendChild(dt); r.appendChild(bd); box.appendChild(r);
+    });
+    host.appendChild(box);
+  }
+
+  /* ---------------- month view ---------------- */
+
+  function renderMonth(){
+    var y=mCursor.getFullYear(), m=mCursor.getMonth();
+    $("mLabel").textContent=MON[m];
+    $("mSub").textContent=String(y);
+    $("stamp").textContent=MON[m].slice(0,3)+" "+y;
+
+    var first=new Date(y,m,1), lead=first.getDay();
+    var len=new Date(y,m+1,0).getDate();
+    var cal=$("cal"); cal.textContent="";
+    DOW1.forEach(function(s){ var h=document.createElement("div"); h.className="dh"; h.textContent=s; cal.appendChild(h); });
+    for(var i=0;i<lead;i++){ var pad=document.createElement("div"); pad.className="cell pad"; cal.appendChild(pad); }
+
+    for(var day=1;day<=len;day++){
+      (function(dnum){
+        var d=new Date(y,m,dnum), k=key(d), fut=k>key(today);
+        var cell=document.createElement("button"); cell.type="button"; cell.className="cell";
+        if(d.getDay()===6) cell.className+=" sat";
+        if(k===key(today)) cell.className+=" now";
+        if(fut) cell.setAttribute("data-fut","1");
+        cell.setAttribute("aria-label",DOW[d.getDay()]+" "+MON[m]+" "+dnum);
+        var n=document.createElement("div"); n.className="n"; n.textContent=dnum; cell.appendChild(n);
+        if((events[k]&&(events[k].items||[]).length)){ var ev=document.createElement("div"); ev.className="ev"; cell.appendChild(ev); }
+        if(!fut){
+          var items=itemsFor(d), cap=items.length+5, hit=0;
+          items.forEach(function(it){ if(st(k,it.id)==="done") hit++; });
+          for(var j=0;j<5;j++){ if(st(k,"teh"+j)==="done") hit++; }
+          if(hit){ var pg=document.createElement("div"); pg.className="pg";
+            var fi=document.createElement("i"); fi.style.width=Math.round(hit/cap*100)+"%";
+            pg.appendChild(fi); cell.appendChild(pg); }
+        }
+        cell.addEventListener("click",function(){ cursor=d; show("day"); });
+        cal.appendChild(cell);
+      })(day);
+    }
+
+    var last=new Date(y,m,len);
+    agenda(key(first),key(last),$("mAgenda"),MON[m]+" occasions");
+  }
+
+  function render(){
+    if(view==="week") renderWeek();
+    else if(view==="month") renderMonth();
+    else renderDay();
+  }
+
+  /* ---------------- writes ---------------- */
+
+  function cycle(k,id){
+    if(!canWrite) return;
+    var cur=st(k,id);
+    var nxt=CYCLE[(CYCLE.indexOf(cur)+1)%CYCLE.length];
+    apply(k,id,nxt);
+  }
+  function toggle(k,id){
+    if(!canWrite) return;
+    apply(k,id, st(k,id)==="done" ? null : "done");
+  }
+  function apply(k,id,val){
+    var copy=Object.assign({},marks[k]||{});
+    if(val) copy[id]=val; else delete copy[id];
+    marks[k]=copy; render(); save();
+  }
+
+  function save(){
+    if(!lsSet(LS_DAYS,marks)) banner("This browser is blocking storage, so your taps won't be kept.");
+    else clearBanner();
+  }
+
+  function banner(m){ var b=$("banner"); b.className="warn"; b.textContent=m; b.hidden=false; }
+  function clearBanner(){ $("banner").hidden=true; }
+
+  /* ---------------- nav ---------------- */
+
+  function show(v){
+    view=v;
+    ["day","week","month"].forEach(function(n){
+      $("view-"+n).hidden = n!==v;
+      $("tab-"+n).setAttribute("aria-selected",String(n===v));
+    });
+    render();
+  }
+  $("tab-day").addEventListener("click",function(){ show("day"); });
+  $("tab-week").addEventListener("click",function(){ wCursor=weekStart(cursor); show("week"); });
+  $("tab-month").addEventListener("click",function(){ mCursor=new Date(cursor.getFullYear(),cursor.getMonth(),1); show("month"); });
+  $("prev").addEventListener("click",function(){ cursor=addDays(cursor,-1); renderDay(); });
+  $("next").addEventListener("click",function(){ cursor=addDays(cursor,1); renderDay(); });
+  $("wprev").addEventListener("click",function(){ wCursor=addDays(wCursor,-7); renderWeek(); });
+  $("wnext").addEventListener("click",function(){ wCursor=addDays(wCursor,7); renderWeek(); });
+  $("mprev").addEventListener("click",function(){ mCursor=new Date(mCursor.getFullYear(),mCursor.getMonth()-1,1); renderMonth(); });
+  $("mnext").addEventListener("click",function(){ mCursor=new Date(mCursor.getFullYear(),mCursor.getMonth()+1,1); renderMonth(); });
+
+  render();
+
+  /* ---------------- store ---------------- */
+
+  var LS_DAYS="schedule.days.v1", LS_EV="schedule.events.v1";
+  var localEvents={};
+
+  function lsGet(k,fallback){
+    try{ var v=localStorage.getItem(k); return v?JSON.parse(v):fallback; }catch(e){ return fallback; }
+  }
+  function lsSet(k,v){
+    try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; }
+  }
+
+  marks = lsGet(LS_DAYS,{}) || {};
+  localEvents = lsGet(LS_EV,{}) || {};
+  mergeEvents();
+  render();
+
+  fetch("events.json",{cache:"no-store"})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(data && typeof data==="object"){ fileEvents=data; mergeEvents(); render(); }
+    })["catch"](function(){});
+})();
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js")["catch"](function(){}); });
+}
+</script>
+</body>
+</html>
